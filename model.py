@@ -1,6 +1,8 @@
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import (
+    Input,
+    Rescaling,
     Conv2D,
     MaxPooling2D,
     Dense,
@@ -15,11 +17,8 @@ from keras.layers import (
 IMAGE_SIZE = (128, 128)
 
 data_augmentation = Sequential([
-
     RandomFlip("horizontal"),
-
     RandomRotation(0.1),
-
     RandomZoom(0.1)
 
 ])
@@ -28,14 +27,17 @@ def build_model():
 
     model = Sequential([
 
-        data_augmentation,
+        Input(shape=(128, 128, 3)),
 
+        data_augmentation,
+        
+        Rescaling(1./255),
+        
         Conv2D(
             16,
             (3,3),
             activation="relu",
-            padding="same",
-            input_shape=(128,128,3)
+            padding="same"
         ),
 
         BatchNormalization(),

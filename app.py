@@ -1,15 +1,30 @@
+import cv2
+import json
+import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
-import cv2
+from keras.models import load_model
 
-from utils import preprocess_image
 from predict import predict
-
+from utils import preprocess_image
 
 st.set_page_config(
     page_title="SmartVision",
     layout="wide"
 )
+
+# OPTIMIZATION: Cache the model. 
+# This stops Streamlit from reloading it on every interaction.
+@st.cache_resource
+def load_model_and_classes():
+
+    model = load_model("models/cnn_model.keras")
+
+    with open("models/classes.json") as f:
+        classes = json.load(f)
+    return model, classes
+
+model, classes = load_model_and_classes()
 
 st.title("🔍 SmartVision")
 st.subheader("Industrial Image Classification System")
@@ -36,14 +51,16 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
 
+# Preprocess the image
     original, processed = preprocess_image(uploaded_file)
     print("Processed Shape:", processed.shape)
     print("Min:", processed.min())
     print("Max:", processed.max())
 
-    prediction, confidence, probabilities, top3, classes = predict(processed)
-    print("Input Shape:", processed.shape)
+# Predict the class of the image
+    prediction, confidence, probabilities, top3, classes = predict(model, classes, processed)
 
+# Display Images and Results
     col1, col2 = st.columns(2)
 
     with col1:
@@ -58,9 +75,9 @@ if uploaded_file:
     with col2:
 
         st.markdown("### Processed Image")
-
+        
         st.image(
-            (processed[0]*255).astype("uint8"),
+            processed[0].astype("uint8"),
             use_container_width=True
         )
 
